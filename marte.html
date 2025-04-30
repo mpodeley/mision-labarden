@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misión Labardén: ¡Rumbo a Marte!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c1427; /* Darker space background */
+            color: #e5e7eb; /* Light text */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align top for canvas */
+            min-height: 100vh;
+            padding: 1rem;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        .game-container {
+            background-color: #1f2937; /* Slightly lighter container */
+            border-radius: 1rem; /* Rounded corners */
+            padding: 1.5rem; /* Slightly reduced padding */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+            max-width: 950px; /* Increased max width slightly more */
+            width: 100%;
+            transition: all 0.3s ease-in-out; /* Smooth transition */
+        }
+        /* Wrapper for simulation and text */
+        .content-wrapper {
+             display: flex;
+             flex-direction: column; /* Canvas top, text bottom default */
+             gap: 1.5rem; /* Space between canvas and text */
+        }
+
+        #orbit-canvas {
+            width: 100%;
+            height: 350px; /* Increased height slightly */
+            background-color: #0b1120; /* Even darker canvas background */
+            border-radius: 0.5rem;
+            display: block; /* Avoid extra space below */
+            margin-bottom: 1rem; /* Space below canvas */
+            cursor: grab; /* Indicate interactivity */
+            position: relative; /* Needed for absolute positioned elements inside */
+            overflow: hidden; /* Hide stars overflowing */
+        }
+         #orbit-canvas:active {
+             cursor: grabbing;
+         }
+        /* Style for phase indicator on canvas */
+        #canvas-phase-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #a5b4fc;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 10; /* Ensure it's above stars */
+        }
+
+
+        .phase-title {
+            font-size: 1.4rem; /* Slightly smaller */
+            font-weight: 700;
+            color: #f9fafb; /* White */
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #4b5563; /* Divider line */
+            padding-bottom: 0.5rem;
+        }
+        .explanation {
+            background-color: #374151; /* Explanation background */
+            padding: 1rem;
+            border-radius: 0.5rem; /* Rounded corners */
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem; /* Slightly smaller */
+            line-height: 1.6; /* Line spacing */
+        }
+        .decision-prompt {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #9ca3af; /* Light gray */
+        }
+        .decision-button {
+            display: block;
+            width: 100%;
+            background-color: #4f46e5; /* Indigo */
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            border: none; /* No default border */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .decision-button:hover {
+            background-color: #4338ca; /* Darker Indigo */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .decision-button:active {
+            transform: scale(0.98); /* Press effect */
+        }
+        .decision-button.incorrect {
+             background-color: #e11d48; /* Rose */
+        }
+         .decision-button.incorrect:hover {
+             background-color: #be123c; /* Darker Rose */
+        }
+        .decision-button.correct {
+             background-color: #16a34a; /* Green */
+        }
+         .decision-button.correct:hover {
+             background-color: #15803d; /* Darker Green */
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        .message-box.success {
+            background-color: #dcfce7; /* Lighter Green bg */
+            color: #166534; /* Darker Green text */
+            border: 1px solid #86efac;
+        }
+        .message-box.warning {
+            background-color: #fef3c7; /* Lighter Amber bg */
+            color: #92400e; /* Darker Amber text */
+             border: 1px solid #fcd34d;
+        }
+        .message-box.error {
+            background-color: #fee2e2; /* Lighter Red bg */
+            color: #991b1b; /* Darker Red text */
+             border: 1px solid #fca5a5;
+        }
+        .hidden {
+            display: none;
+        }
+        .planet-icon-text { /* Renamed to avoid conflict */
+            font-size: 1.2rem; /* Icon size in text */
+            display: inline-block;
+            margin: 0 0.2rem;
+            vertical-align: middle; /* Align icons better with text */
+        }
+
+        /* Responsive styles */
+        @media (min-width: 768px) { /* On medium and larger screens */
+             .content-wrapper {
+                 flex-direction: row; /* Canvas left, text right */
+                 align-items: flex-start;
+             }
+             #orbit-canvas {
+                 width: 48%; /* Canvas width */
+                 height: 480px; /* More height on large screens */
+                 margin-bottom: 0; /* No bottom margin */
+             }
+             .text-content {
+                 width: 52%; /* Text width */
+             }
+        }
+
+        @media (max-width: 640px) {
+            .game-container {
+                padding: 1rem;
+            }
+            #orbit-canvas {
+                height: 300px; /* Adjust height for mobile */
+            }
+            .phase-title {
+                font-size: 1.25rem;
+            }
+            .explanation {
+                font-size: 0.85rem;
+            }
+            .decision-button {
+                 padding: 0.7rem 0.9rem; /* Slightly larger buttons */
+                 font-size: 0.95rem;
+            }
+             #canvas-phase-indicator {
+                 font-size: 0.7rem;
+                 padding: 2px 6px;
+             }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="game" class="game-container">
+
+        <div class="content-wrapper">
+            <div style="position: relative; width: 100%;" id="canvas-container">
+                 <canvas id="orbit-canvas"></canvas>
+                 <div id="canvas-phase-indicator" class="hidden">FASE: -</div>
+            </div>
+
+
+            <div class="text-content">
+
+                <div id="phase-start">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-center mb-4 text-white">🚀 Misión Labardén: ¡Rumbo a Marte! 🚀</h1>
+                    <p class="text-center mb-6">¡Bienvenido/a, <strong class="text-indigo-400">Capitán/Capitana de la Misión Labardén</strong>!</p>
+                    <div class="explanation">
+                        Tu misión es comandar la nave "Exploradora 1" desde la Tierra <span class="planet-icon-text">🌍</span> hasta Marte <span class="planet-icon-text" style="color: #f87171;">🪐</span>. Observa la simulación orbital (¡arrastra para rotar!) para entender la <strong>gravedad</strong> y toma decisiones cruciales. ¡El éxito depende de ti!
+                    </div>
+                    <button id="start-button" class="decision-button">¡Iniciar Simulación y Misión!</button>
+                </div>
+
+                <div id="phase-1" class="hidden">
+                    <h2 class="phase-title">FASE 1: Ventana de Lanzamiento <span class="planet-icon-text">🌍</span>☀️<span class="planet-icon-text" style="color: #f87171;">🪐</span></h2>
+                    <div class="explanation">
+                        <strong>Explicación:</strong> Tierra y Marte orbitan el Sol a diferentes velocidades. Necesitamos una "ventana de lanzamiento" para usar la <strong>Órbita de Transferencia de Hohmann</strong> (ver simulación). Es el camino más eficiente.
+                        <br><em>Observa la alineación actual. ¿Es óptima para un viaje corto y eficiente?</em>
+                    </div>
+                    <p class="decision-prompt">¿Qué decides, Capitán/Capitana?</p>
+                    <button class="decision-button" data-choice="1" data-phase="1">1. Lanzar AHORA (Alineación subóptima).</button>
+                    <button class="decision-button" data-choice="2" data-phase="1">2. Esperar 4 meses (Alineación ideal para Hohmann).</button>
+                    <button class="decision-button" data-choice="3" data-phase="1">3. Esperar 1 año (Alineación muy desfavorable).</button>
+                    <div id="message-1" class="message-box hidden"></div>
+                </div>
+
+                <div id="phase-2" class="hidden">
+                     <h2 class="phase-title">FASE 2: ¡Despegue y Empuje Trans-Marte! <span class="planet-icon-text">🌍</span>💨</h2>
+                     <div class="explanation">
+                         <strong>Explicación:</strong> ¡Despegamos! Vencimos la gravedad terrestre <span class="planet-icon-text">🌍</span>. Ahora, un último empujón nos coloca en la trayectoria hacia Marte <span class="planet-icon-text" style="color: #f87171;">🪐</span>.
+                         <br><em>Mira cómo la nave inicia su viaje elíptico en la simulación.</em>
+                    </div>
+                     <div class="text-center my-4 text-xl font-semibold animate-pulse text-indigo-300">✨ ¡En camino a Marte! ✨</div>
+                     <button id="continue-2" class="decision-button">Continuar Viaje</button>
+                     <div id="message-2" class="message-box hidden"></div>
+                </div>
+
+                <div id="phase-3" class="hidden">
+                     <h2 class="phase-title">FASE 3: Viaje y Corrección ☀️🚀...<span class="planet-icon-text" style="color: #f87171;">🪐</span></h2>
+                     <div class="explanation">
+                         <strong>Explicación:</strong> La gravedad del Sol ☀️ guía la nave. Detectamos una pequeña desviación. Necesitamos una <strong>corrección de trayectoria</strong> (TCM). ¡Un pequeño ajuste ahora ahorra mucho combustible después!
+                         <br><em>La simulación muestra la trayectoria proyectada. Una corrección la ajustará. ¡Observa el pequeño encendido del motor!</em>
+                     </div>
+                     <p class="decision-prompt">¿Qué ajuste realizamos?</p>
+                     <button class="decision-button" data-choice="1" data-phase="3">1. Realizar TCM calculado (recomendado).</button>
+                     <button class="decision-button" data-choice="2" data-phase="3">2. No hacer nada (ignorar desviación).</button>
+                     <button class="decision-button" data-choice="3" data-phase="3">3. Realizar TCM en dirección opuesta (error).</button>
+                     <div id="message-3" class="message-box hidden"></div>
+                </div>
+
+                <div id="phase-4" class="hidden">
+                     <h2 class="phase-title">FASE 4: Inserción Orbital Marciana 🔥<span class="planet-icon-text" style="color: #f87171;">🪐</span></h2>
+                     <div class="explanation">
+                         <strong>Explicación:</strong> ¡Llegamos! Pero vamos muy rápido. Hay que FRENAR (encender motores en contra) para que la gravedad de Marte <span class="planet-icon-text" style="color: #f87171;">🪐</span> nos capture en órbita (<strong>MOI</strong>). ¡Momento y duración CRÍTICOS!
+                         <br><em>¡Observa la maniobra de frenado (encendido de motor) en la simulación!</em>
+                     </div>
+                     <p class="decision-prompt">¿Cuándo/cómo encendemos los motores de frenado?</p>
+                     <button class="decision-button" data-choice="1" data-phase="4">1. Frenar DEMASIADO PRONTO/FUERTE.</button>
+                     <button class="decision-button" data-choice="2" data-phase="4">2. Frenar en el MOMENTO y DURACIÓN EXACTOS.</button>
+                     <button class="decision-button" data-choice="3" data-phase="4">3. Frenar DEMASIADO TARDE/DÉBIL.</button>
+                     <div id="message-4" class="message-box hidden"></div>
+                </div>
+
+                <div id="phase-success" class="hidden">
+                    <h2 class="phase-title text-green-400">🎉 ¡MISIÓN LABARDÉN CUMPLIDA! 🎉</h2>
+                    <div class="explanation">
+                        ¡Felicidades, <strong class="text-indigo-400">Capitán/Capitana</strong>! Has guiado la "Exploradora 1" hasta la órbita de Marte <span class="planet-icon-text" style="color: #f87171;">🪐</span>.
+                        <ul class="list-disc list-inside mt-2 space-y-1">
+                            <li>Venciste la gravedad terrestre <span class="planet-icon-text">🌍</span>.</li>
+                            <li>Usaste la gravedad del Sol ☀️ para viajar eficientemente.</li>
+                            <li>Te dejaste atrapar por la gravedad marciana <span class="planet-icon-text" style="color: #f87171;">🪐</span> con una MOI perfecta.</li>
+                        </ul>
+                         ¡Un trabajo estelar! La simulación muestra la nave orbitando Marte establemente.
+                    </div>
+                    <button id="restart-button-success" class="decision-button">Jugar de Nuevo</button>
+                </div>
+
+                <div id="phase-failure" class="hidden">
+                    <h2 class="phase-title text-red-500">😢 MISIÓN LABARDÉN FALLIDA 😢</h2>
+                    <div id="failure-reason" class="explanation bg-red-900/80 text-red-100 border border-red-700">
+                        </div>
+                    <p class="text-center my-4">No te preocupes, Capitán/Capitana. Los viajes espaciales son complejos. ¡Cada intento enseña!</p>
+                    <button id="restart-button-failure" class="decision-button">Intentar de Nuevo</button>
+                </div>
+
+            </div> </div> </div> <script>
+        // --- Game Variables ---
+        const phases = ['start', '1', '2', '3', '4', 'success', 'failure'];
+        const phaseElements = {};
+        phases.forEach(p => {
+            phaseElements[p] = document.getElementById(`phase-${p}`);
+        });
+        const messageElements = {
+            '1': document.getElementById('message-1'),
+            '2': document.getElementById('message-2'),
+            '3': document.getElementById('message-3'),
+            '4': document.getElementById('message-4'),
+        };
+        const failureReasonElement = document.getElementById('failure-reason');
+        const canvas = document.getElementById('orbit-canvas');
+        const ctx = canvas.getContext('2d');
+        const canvasPhaseIndicator = document.getElementById('canvas-phase-indicator');
+        const canvasContainer = document.getElementById('canvas-container'); // Get container for relative positioning
+
+        let currentPhase = 'start';
+        let missionFailed = false;
+        let launchWindowChoice = '2'; // Default to optimal
+        let trajectoryChoice = '1'; // Default to optimal
+        let moiChoice = '2'; // Default to optimal
+        let animationFrameId = null;
+
+        // --- Orbital Simulation Variables ---
+        let sun, earth, mars, spacecraft;
+        let stars = []; // Array to hold star positions
+        const NUM_STARS = 150; // Number of background stars
+        const AU_SCALE = 130; // Increased scale slightly
+        const PLANET_SCALE = 0.06;
+        const SUN_SCALE = 0.12;
+        const TIMESTEP = 0.05;
+        let simulationState = 'idle';
+        const TRANSFER_DURATION_STEPS = 1600; // Slightly longer transfer visual
+        let viewAngle = 0;
+        let isDragging = false;
+        let lastMouseX = 0;
+        let burnEffect = { active: false, x: 0, y: 0, radius: 0, maxRadius: 15, duration: 30, timer: 0, color: 'rgba(255, 165, 0, 0.8)' }; // For engine burns
+
+
+        // --- Simulation Physics/Math Constants ---
+        const EARTH_ORBIT_RADIUS = AU_SCALE;
+        const MARS_ORBIT_RADIUS = AU_SCALE * 1.52;
+        const EARTH_ORBIT_SPEED = 0.017 * 5;
+        const MARS_ORBIT_SPEED = EARTH_ORBIT_SPEED / Math.sqrt(1.52**3); // More accurate relative speed
+
+        // --- Simulation Functions ---
+
+        function createStars() {
+            stars = [];
+            for (let i = 0; i < NUM_STARS; i++) {
+                stars.push({
+                    x: Math.random() * canvas.offsetWidth,
+                    y: Math.random() * canvas.offsetHeight,
+                    radius: Math.random() * 1.2, // Varying star sizes
+                    alpha: 0.5 + Math.random() * 0.5 // Varying brightness
+                });
+            }
+        }
+
+        function drawStars() {
+            ctx.save();
+            // Draw stars fixed relative to the canvas background
+             ctx.setTransform(1, 0, 0, 1, 0, 0); // Use raw canvas coordinates
+             stars.forEach(star => {
+                 ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                 ctx.beginPath();
+                 ctx.arc(star.x * window.devicePixelRatio, star.y * window.devicePixelRatio, star.radius * window.devicePixelRatio, 0, 2 * Math.PI);
+                 ctx.fill();
+             });
+            ctx.restore(); // Restore scaled transform
+        }
+
+        function triggerBurnEffect(x, y, color = 'rgba(255, 165, 0, 0.8)', duration = 30, maxRadius = 15) {
+             // Convert world coordinates to rotated screen coordinates for the effect
+             const centerX = sun.x;
+             const centerY = sun.y;
+             const scOffsetX = x - centerX;
+             const scOffsetY = y - centerY;
+             const screenX = centerX + scOffsetX * Math.cos(viewAngle) - scOffsetY * Math.sin(viewAngle);
+             const screenY = centerY + scOffsetX * Math.sin(viewAngle) + scOffsetY * Math.cos(viewAngle);
+
+             burnEffect.active = true;
+             burnEffect.x = screenX;
+             burnEffect.y = screenY;
+             burnEffect.radius = 0;
+             burnEffect.maxRadius = maxRadius;
+             burnEffect.duration = duration;
+             burnEffect.timer = duration;
+             burnEffect.color = color;
+        }
+
+        function drawBurnEffect() {
+            if (!burnEffect.active) return;
+
+            burnEffect.timer--;
+            if (burnEffect.timer <= 0) {
+                burnEffect.active = false;
+                return;
+            }
+
+            // Calculate current radius and alpha based on timer progress
+            const progress = burnEffect.timer / burnEffect.duration; // Goes from 1 to 0
+            const currentRadius = burnEffect.maxRadius * (1 - progress * progress); // Grows quickly, fades
+            const currentAlpha = 0.8 * progress; // Fades out
+
+            ctx.fillStyle = burnEffect.color.replace(/[^,]+(?=\))/, currentAlpha.toFixed(2)); // Update alpha
+            ctx.beginPath();
+            ctx.arc(burnEffect.x, burnEffect.y, currentRadius, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+
+        function initSimulation(launchChoice = '2') {
+            // Adjust canvas size
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvasContainer.offsetWidth * dpr; // Use container width
+            canvas.height = canvasContainer.offsetHeight * dpr; // Use container height
+            canvas.style.width = `${canvasContainer.offsetWidth}px`;
+            canvas.style.height = `${canvasContainer.offsetHeight}px`;
+            ctx.scale(dpr, dpr);
+
+            const centerX = canvasContainer.offsetWidth / 2; // Use container dimensions for center
+            const centerY = canvasContainer.offsetHeight / 2;
+
+            sun = { x: centerX, y: centerY, radius: SUN_SCALE * AU_SCALE, color: '#facc15' };
+
+            // --- Set initial planet positions ---
+            let earthStartAngle = Math.random() * 2 * Math.PI;
+            let marsStartAngle;
+            const optimalPhaseAngle = Math.PI * (1 - 1 / Math.sqrt(((1 + 1.52) / 2)**3));
+
+            if (launchChoice === '1') {
+                marsStartAngle = earthStartAngle + Math.PI / 2 + (Math.random() - 0.5) * Math.PI / 2;
+            } else if (launchChoice === '3') {
+                 marsStartAngle = earthStartAngle + Math.PI + (Math.random() - 0.5) * Math.PI / 2;
+            } else {
+                 marsStartAngle = earthStartAngle + optimalPhaseAngle;
+            }
+            earthStartAngle = (earthStartAngle + 2 * Math.PI) % (2 * Math.PI);
+            marsStartAngle = (marsStartAngle + 2 * Math.PI) % (2 * Math.PI);
+
+            earth = {
+                orbitRadius: EARTH_ORBIT_RADIUS, angle: earthStartAngle, speed: EARTH_ORBIT_SPEED,
+                radius: Math.max(4, PLANET_SCALE * AU_SCALE), color: '#3b82f6' // Slightly larger Earth
+            };
+            mars = {
+                orbitRadius: MARS_ORBIT_RADIUS, angle: marsStartAngle, speed: MARS_ORBIT_SPEED,
+                radius: Math.max(3, PLANET_SCALE * AU_SCALE * 0.8), color: '#ef4444' // Slightly larger Mars
+            };
+            spacecraft = {
+                x: 0, y: 0, radius: 3, color: 'white', vx: 0, vy: 0,
+                orbitTarget: null, transferProgress: 0, hohmannEllipse: null, visible: false
+            };
+            simulationState = 'idle';
+            spacecraft.visible = false;
+            createStars(); // Create stars based on new canvas size
+            updatePlanetPositions(viewAngle);
+        }
+
+        function calculateHohmannEllipse(startPos, endOrbitRadius) {
+            // Calculation remains the same
+             const r1 = startPos.orbitRadius;
+             const r2 = endOrbitRadius;
+             const a = (r1 + r2) / 2;
+             const e = (r2 - r1) / (r1 + r2);
+             const c = a * e;
+             const b = a * Math.sqrt(1 - e**2);
+             const launchAngle = startPos.angle; // Use raw angle before rotation
+
+             return {
+                 centerX: sun.x - c * Math.cos(launchAngle),
+                 centerY: sun.y - c * Math.sin(launchAngle),
+                 semiMajorAxis: a, semiMinorAxis: b, rotation: launchAngle,
+                 startAngle: 0, endAngle: Math.PI
+             };
+        }
+
+        function updatePlanetPositions(rotationAngle) {
+            const centerX = sun.x;
+            const centerY = sun.y;
+            // Calculate raw positions (unrotated)
+            const rawEarthX = centerX + earth.orbitRadius * Math.cos(earth.angle);
+            const rawEarthY = centerY + earth.orbitRadius * Math.sin(earth.angle);
+            const rawMarsX = centerX + mars.orbitRadius * Math.cos(mars.angle);
+            const rawMarsY = centerY + mars.orbitRadius * Math.sin(mars.angle);
+
+            // Apply view rotation
+            earth.x = centerX + (rawEarthX - centerX) * Math.cos(rotationAngle) - (rawEarthY - centerY) * Math.sin(rotationAngle);
+            earth.y = centerY + (rawEarthX - centerX) * Math.sin(rotationAngle) + (rawEarthY - centerY) * Math.cos(rotationAngle);
+            mars.x = centerX + (rawMarsX - centerX) * Math.cos(rotationAngle) - (rawMarsY - centerY) * Math.sin(rotationAngle);
+            mars.y = centerY + (rawMarsX - centerX) * Math.sin(rotationAngle) + (rawMarsY - centerY) * Math.cos(rotationAngle);
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = '#0b1120'; // Darker background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            drawStars(); // Draw background stars first
+
+            const centerX = sun.x;
+            const centerY = sun.y;
+
+            // --- Draw Orbits (rotated) ---
+            ctx.strokeStyle = '#374151'; // Slightly lighter gray for orbits
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, earth.orbitRadius, earth.orbitRadius, viewAngle, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, mars.orbitRadius, mars.orbitRadius, viewAngle, 0, 2 * Math.PI);
+            ctx.stroke();
+
+            // --- Draw Sun (with a subtle glow) ---
+            const sunGradient = ctx.createRadialGradient(sun.x, sun.y, sun.radius * 0.5, sun.x, sun.y, sun.radius * 1.5);
+            sunGradient.addColorStop(0, '#fef08a'); // Lighter yellow center
+            sunGradient.addColorStop(0.8, sun.color); // Main color
+            sunGradient.addColorStop(1, 'rgba(250, 204, 21, 0)'); // Transparent edge
+            ctx.fillStyle = sunGradient;
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.radius * 1.5, 0, 2 * Math.PI); // Draw glow larger than radius
+            ctx.fill();
+             // Draw core sun
+             ctx.fillStyle = sun.color;
+             ctx.beginPath();
+             ctx.arc(sun.x, sun.y, sun.radius, 0, 2 * Math.PI);
+             ctx.fill();
+
+
+            // --- Draw Planets (at rotated positions) ---
+            // Earth
+            ctx.fillStyle = earth.color;
+            ctx.shadowColor = 'rgba(59, 130, 246, 0.7)'; // Blue shadow
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(earth.x, earth.y, earth.radius, 0, 2 * Math.PI);
+            ctx.fill();
+             ctx.shadowBlur = 0; // Reset shadow
+
+            // Mars
+            ctx.fillStyle = mars.color;
+             ctx.shadowColor = 'rgba(239, 68, 68, 0.7)'; // Red shadow
+             ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(mars.x, mars.y, mars.radius, 0, 2 * Math.PI);
+            ctx.fill();
+             ctx.shadowBlur = 0; // Reset shadow
+
+            // --- Draw Spacecraft and Trajectory ---
+            if (spacecraft.visible) {
+                // Calculate current screen position of spacecraft
+                 const scOffsetX = spacecraft.x - centerX;
+                 const scOffsetY = spacecraft.y - centerY;
+                 const currentScX = centerX + scOffsetX * Math.cos(viewAngle) - scOffsetY * Math.sin(viewAngle);
+                 const currentScY = centerY + scOffsetX * Math.sin(viewAngle) + scOffsetY * Math.cos(viewAngle);
+
+                // Draw Hohmann Transfer Ellipse
+                if (simulationState === 'transfer' && spacecraft.hohmannEllipse) {
+                    ctx.strokeStyle = trajectoryChoice === '1' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 165, 0, 0.5)';
+                    ctx.lineWidth = trajectoryChoice === '1' ? 1.5 : 2.5;
+                    ctx.setLineDash(trajectoryChoice === '1' ? [] : [5, 5]); // Dashed line for bad trajectory
+                    ctx.beginPath();
+                    const ellipse = spacecraft.hohmannEllipse;
+                    ctx.ellipse(
+                        centerX + (ellipse.centerX - centerX) * Math.cos(viewAngle) - (ellipse.centerY - centerY) * Math.sin(viewAngle),
+                        centerY + (ellipse.centerX - centerX) * Math.sin(viewAngle) + (ellipse.centerY - centerY) * Math.cos(viewAngle),
+                        ellipse.semiMajorAxis, ellipse.semiMinorAxis, ellipse.rotation + viewAngle,
+                        ellipse.startAngle, ellipse.endAngle
+                    );
+                    ctx.stroke();
+                     ctx.setLineDash([]); // Reset line dash
+                }
+
+                // Draw the spacecraft
+                ctx.fillStyle = spacecraft.color;
+                 ctx.shadowColor = 'rgba(255, 255, 255, 0.8)'; // White glow
+                 ctx.shadowBlur = 5;
+                ctx.beginPath();
+                ctx.arc(currentScX, currentScY, spacecraft.radius, 0, 2 * Math.PI);
+                ctx.fill();
+                 ctx.shadowBlur = 0; // Reset shadow
+            }
+
+            // Draw Engine Burn Effect (on top of everything else)
+            drawBurnEffect();
+        }
+
+        function animateSimulation() {
+            // Update raw angles
+            earth.angle = (earth.angle + earth.speed * TIMESTEP) % (2 * Math.PI);
+            mars.angle = (mars.angle + mars.speed * TIMESTEP) % (2 * Math.PI);
+
+            // Update raw planet positions
+            const centerX = sun.x;
+            const centerY = sun.y;
+            const rawEarthX = centerX + earth.orbitRadius * Math.cos(earth.angle);
+            const rawEarthY = centerY + earth.orbitRadius * Math.sin(earth.angle);
+            const rawMarsX = centerX + mars.orbitRadius * Math.cos(mars.angle);
+            const rawMarsY = centerY + mars.orbitRadius * Math.sin(mars.angle);
+
+            // --- Update Spacecraft Position (Raw) ---
+            if (simulationState === 'transfer' && spacecraft.hohmannEllipse) {
+                 spacecraft.transferProgress += 1 / TRANSFER_DURATION_STEPS;
+                 if (spacecraft.transferProgress > 1) spacecraft.transferProgress = 1;
+
+                 const ellipse = spacecraft.hohmannEllipse;
+                 const ecc = (mars.orbitRadius - earth.orbitRadius) / (earth.orbitRadius + mars.orbitRadius);
+                 const meanAnomaly = Math.PI * spacecraft.transferProgress;
+                 let E = meanAnomaly;
+                 for (let i = 0; i < 5; i++) { E = E - (E - ecc * Math.sin(E) - meanAnomaly) / (1 - ecc * Math.cos(E)); }
+                 const trueAnomaly = 2 * Math.atan2(Math.sqrt(1 + ecc) * Math.sin(E / 2), Math.sqrt(1 - ecc) * Math.cos(E / 2));
+                 const distance = ellipse.semiMajorAxis * (1 - ecc * Math.cos(E));
+                 const angleRelativeToSun = trueAnomaly + ellipse.rotation;
+
+                 let errorFactor = 1.0;
+                 let angleError = 0;
+                 if (trajectoryChoice === '2') { errorFactor = 1.03; angleError = 0.05 * spacecraft.transferProgress; }
+                 else if (trajectoryChoice === '3') { errorFactor = 0.97; angleError = -0.08 * spacecraft.transferProgress; }
+
+                 spacecraft.x = centerX + distance * errorFactor * Math.cos(angleRelativeToSun + angleError);
+                 spacecraft.y = centerY + distance * errorFactor * Math.sin(angleRelativeToSun + angleError);
+
+                 // Check for arrival
+                 const distToMars = Math.hypot(spacecraft.x - rawMarsX, spacecraft.y - rawMarsY);
+                 if (spacecraft.transferProgress >= 1 || distToMars < mars.radius + AU_SCALE * 0.1) {
+                      if (currentPhase === '4' && simulationState === 'transfer') { // Only stop if still in transfer state
+                           spacecraft.transferProgress = 1; // Lock progress
+                           // Recalculate final precise position
+                           const finalMeanAnomaly = Math.PI;
+                           let finalE = finalMeanAnomaly;
+                           for (let i = 0; i < 5; i++) { finalE = finalE - (finalE - ecc * Math.sin(finalE) - finalMeanAnomaly) / (1 - ecc * Math.cos(finalE)); }
+                           const finalTrueAnomaly = 2 * Math.atan2(Math.sqrt(1 + ecc) * Math.sin(finalE / 2), Math.sqrt(1 - ecc) * Math.cos(finalE / 2));
+                           const finalDistance = ellipse.semiMajorAxis * (1 - ecc * Math.cos(finalE));
+                           const finalAngleRelativeToSun = finalTrueAnomaly + ellipse.rotation;
+                           spacecraft.x = centerX + finalDistance * errorFactor * Math.cos(finalAngleRelativeToSun + angleError);
+                           spacecraft.y = centerY + finalDistance * errorFactor * Math.sin(finalAngleRelativeToSun + angleError);
+
+                           console.log("Nave en posición para MOI. Esperando decisión.");
+                           // Don't stop animation, just stop updating transfer position. MOI decision will change state.
+                           // simulationState = 'awaiting_moi'; // Could use a specific state
+                      }
+                 }
+
+            } else if (simulationState === 'orbiting_mars') {
+                const orbitRadius = mars.radius + 10; // Slightly wider orbit visual
+                const orbitSpeed = 0.05;
+                spacecraft.orbitAngle = (spacecraft.orbitAngle || Math.atan2(spacecraft.y - rawMarsY, spacecraft.x - rawMarsX)) + orbitSpeed * TIMESTEP;
+                spacecraft.x = rawMarsX + orbitRadius * Math.cos(spacecraft.orbitAngle);
+                spacecraft.y = rawMarsY + orbitRadius * Math.sin(spacecraft.orbitAngle);
+            } else if (simulationState === 'failed_flyby') {
+                 spacecraft.x += spacecraft.vx * TIMESTEP * 6; // Faster flyby
+                 spacecraft.y += spacecraft.vy * TIMESTEP * 6;
+            } else if (simulationState === 'failed_crash') {
+                 const dx = rawMarsX - spacecraft.x;
+                 const dy = rawMarsY - spacecraft.y;
+                 const dist = Math.hypot(dx, dy);
+                 if (dist > mars.radius + 1) {
+                     const pull = 0.6;
+                     spacecraft.x += (dx / dist) * pull * TIMESTEP * Math.min(6, dist);
+                     spacecraft.y += (dy / dist) * pull * TIMESTEP * Math.min(6, dist);
+                 } else {
+                     simulationState = 'idle';
+                     spacecraft.visible = false;
+                 }
+            }
+
+            // Update rotated positions for drawing
+            updatePlanetPositions(viewAngle);
+            // Draw the frame
+            draw();
+
+            // Loop
+            animationFrameId = requestAnimationFrame(animateSimulation);
+        }
+
+        function stopSimulation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        }
+
+        function startSimulation(launchChoice = '2') {
+            stopSimulation();
+            initSimulation(launchChoice);
+            animateSimulation();
+        }
+
+        // --- Game Logic Functions (Modified) ---
+
+        function updateCanvasIndicator(phaseText) {
+             if (phaseText) {
+                canvasPhaseIndicator.textContent = `FASE: ${phaseText}`;
+                canvasPhaseIndicator.classList.remove('hidden');
+            } else {
+                 canvasPhaseIndicator.classList.add('hidden');
+            }
+        }
+
+
+        function showPhase(phaseId) {
+             phases.forEach(p => {
+                 if (phaseElements[p]) {
+                    phaseElements[p].classList.add('hidden');
+                 }
+             });
+              if (phaseElements[phaseId]) {
+                  phaseElements[phaseId].classList.remove('hidden');
+                  currentPhase = phaseId;
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                  // --- Update Simulation & Indicator Based on Phase ---
+                  let indicatorText = '';
+                  switch (phaseId) {
+                      case '1':
+                          indicatorText = '1 - Ventana Lanzamiento';
+                          simulationState = 'idle';
+                          spacecraft.visible = false;
+                          startSimulation(launchWindowChoice);
+                          break;
+                      case '2':
+                           indicatorText = '2 - Empuje Trans-Marte';
+                           spacecraft.hohmannEllipse = calculateHohmannEllipse(earth, mars.orbitRadius);
+                           simulationState = 'transfer';
+                           spacecraft.visible = true;
+                           const centerX = sun.x; const centerY = sun.y;
+                           spacecraft.x = centerX + earth.orbitRadius * Math.cos(earth.angle);
+                           spacecraft.y = centerY + earth.orbitRadius * Math.sin(earth.angle);
+                           spacecraft.transferProgress = 0;
+                           triggerBurnEffect(spacecraft.x, spacecraft.y, 'rgba(100, 180, 255, 0.9)', 40, 20); // Blueish burn for TMI
+                           if (!animationFrameId) animateSimulation();
+                           break;
+                       case '3':
+                           indicatorText = '3 - Viaje y Corrección';
+                           // Animation continues in 'transfer' state
+                           if (!animationFrameId) animateSimulation();
+                           break;
+                       case '4':
+                           indicatorText = '4 - Inserción Orbital';
+                           // Animation continues, should be near Mars
+                           if (!animationFrameId) animateSimulation();
+                           break;
+                       case 'success':
+                            indicatorText = 'ÉXITO - Orbitando Marte';
+                           // State set in handleDecision
+                           if (!animationFrameId) animateSimulation();
+                           break;
+                       case 'failure':
+                           indicatorText = 'FALLO DE MISIÓN';
+                           // State set in handleDecision
+                           if (!animationFrameId) animateSimulation();
+                           break;
+                       case 'start':
+                           indicatorText = ''; // No indicator on start
+                           stopSimulation();
+                           initSimulation();
+                           draw();
+                           break;
+                  }
+                  updateCanvasIndicator(indicatorText);
+
+
+              } else {
+                  console.error("Phase element not found:", phaseId);
+              }
+         }
+
+        function showMessage(phase, text, type = 'success') {
+            // Function remains the same
+            const msgBox = messageElements[phase];
+            if (!msgBox) return;
+            msgBox.textContent = text;
+            msgBox.className = `message-box ${type}`;
+            msgBox.classList.remove('hidden');
+        }
+
+        function handleDecision(phase, choice) {
+            // Core logic remains similar, but trigger burn effects
+            const correctChoices = { '1': '2', '3': '1', '4': '2' };
+            const choiceButton = document.querySelector(`#phase-${phase} button[data-choice="${choice}"]`);
+            const allButtonsInPhase = document.querySelectorAll(`#phase-${phase} button[data-choice]`);
+
+            allButtonsInPhase.forEach(btn => btn.disabled = true);
+
+            if (phase === '1') launchWindowChoice = choice;
+            if (phase === '3') trajectoryChoice = choice;
+            if (phase === '4') moiChoice = choice;
+
+            if (choice === correctChoices[phase]) {
+                showMessage(phase, "¡Excelente decisión, Capitán/Capitana!", 'success');
+                choiceButton.classList.add('correct');
+
+                if (phase === '1') {
+                     startSimulation(launchWindowChoice);
+                     setTimeout(() => showPhase('2'), 1500);
+                } else if (phase === '3') {
+                     // Trigger TCM burn visual
+                     triggerBurnEffect(spacecraft.x, spacecraft.y, 'rgba(255, 200, 0, 0.8)', 25, 12); // Yellowish burn for TCM
+                     setTimeout(() => showPhase('4'), 1500);
+                } else if (phase === '4') {
+                    triggerBurnEffect(spacecraft.x, spacecraft.y, 'rgba(255, 100, 100, 0.9)', 50, 25); // Reddish burn for MOI braking
+                    if (launchWindowChoice === '2' && trajectoryChoice === '1') {
+                         simulationState = 'orbiting_mars';
+                         const rawMarsX = sun.x + mars.orbitRadius * Math.cos(mars.angle);
+                         const rawMarsY = sun.y + mars.orbitRadius * Math.sin(mars.angle);
+                         spacecraft.orbitAngle = Math.atan2(spacecraft.y - rawMarsY, spacecraft.x - rawMarsX);
+                         setTimeout(() => showPhase('success'), 1500);
+                    } else {
+                        showMessage(phase, "MOI correcta, pero errores previos comprometieron la órbita final.", 'warning');
+                        simulationState = 'failed_flyby';
+                         const angleToMars = Math.atan2(mars.y - spacecraft.y, mars.x - spacecraft.x);
+                         spacecraft.vx = Math.cos(angleToMars + Math.PI/2) * 0.5;
+                         spacecraft.vy = Math.sin(angleToMars + Math.PI/2) * 0.5;
+                        setTimeout(() => showFailureScreen("Fallo Crítico: MOI correcta, pero errores previos impidieron órbita estable."), 2000);
+                    }
+                }
+            } else {
+                // --- Incorrect Decision ---
+                missionFailed = true;
+                let failureMsg = "";
+                let userMsg = "";
+                choiceButton.classList.add('incorrect');
+
+                if (phase === '1') {
+                     startSimulation(launchWindowChoice);
+                     userMsg = choice === '1' ? "Lanzar ahora complica mucho la trayectoria..." : "Esperar tanto hace el viaje muy largo...";
+                     failureMsg = choice === '1' ? "Fallo: Ventana de lanzamiento ineficiente." : "Fallo: Ventana de lanzamiento muy tardía.";
+                     showMessage(phase, userMsg, 'warning');
+                     setTimeout(() => showPhase('2'), 2000);
+                } else if (phase === '3') {
+                    // Trigger incorrect TCM burn visual (maybe different color/smaller?)
+                    triggerBurnEffect(spacecraft.x, spacecraft.y, 'rgba(255, 0, 0, 0.7)', 20, 8); // Small red flicker for bad TCM
+                    userMsg = choice === '2' ? "No corregir nos desviará..." : "Corrección errónea agrava el error...";
+                    failureMsg = choice === '2' ? "Fallo: Sin corrección de trayectoria." : "Fallo: Corrección de trayectoria errónea.";
+                    showMessage(phase, userMsg, 'warning');
+                    setTimeout(() => showPhase('4'), 2000);
+                } else if (phase === '4') {
+                    // Trigger incorrect MOI burn visual (maybe weaker/shorter?)
+                    triggerBurnEffect(spacecraft.x, spacecraft.y, 'rgba(200, 50, 50, 0.6)', 20, 15); // Weak red burn for bad MOI
+                    if (choice === '1') {
+                         userMsg = "¡Frenamos demasiado pronto/fuerte!";
+                         failureMsg = "Fallo MOI: Frenado incorrecto (demasiado pronto/fuerte).";
+                         simulationState = 'failed_crash';
+                     } else { // choice === '3'
+                         userMsg = "¡Frenamos tarde/débil! ¡Pasamos de largo!";
+                         failureMsg = "Fallo MOI: Frenado incorrecto (demasiado tarde/débil).";
+                         simulationState = 'failed_flyby';
+                         const angleToMars = Math.atan2(mars.y - spacecraft.y, mars.x - spacecraft.x);
+                         spacecraft.vx = Math.cos(angleToMars + Math.PI/2);
+                         spacecraft.vy = Math.sin(angleToMars + Math.PI/2);
+                     }
+                    showMessage(phase, userMsg, 'error');
+                    setTimeout(() => showFailureScreen(failureMsg), 2000);
+                }
+            }
+        }
+
+
+        function showFailureScreen(reason) {
+            // Function remains the same
+            failureReasonElement.textContent = reason;
+            showPhase('failure');
+        }
+
+        function restartGame() {
+            // Function remains the same
+            missionFailed = false;
+            launchWindowChoice = '2';
+            trajectoryChoice = '1';
+            moiChoice = '2';
+            viewAngle = 0;
+            stopSimulation();
+            Object.values(messageElements).forEach(msg => {
+                if(msg) msg.classList.add('hidden');
+            });
+             document.querySelectorAll('.decision-button[data-choice]').forEach(btn => {
+                 btn.disabled = false;
+                 btn.classList.remove('correct', 'incorrect');
+             });
+            showPhase('start');
+        }
+
+        // --- Event Listeners (mostly unchanged) ---
+        document.getElementById('start-button').addEventListener('click', () => { showPhase('1'); });
+        document.getElementById('game').addEventListener('click', (event) => {
+            if (event.target.matches('.decision-button[data-choice]')) {
+                handleDecision(event.target.getAttribute('data-phase'), event.target.getAttribute('data-choice'));
+            }
+        });
+        document.getElementById('continue-2').addEventListener('click', () => {
+             const msgType = launchWindowChoice !== '2' ? 'warning' : 'success';
+             const msgText = launchWindowChoice !== '2' ? "Viaje iniciado, trayectoria no óptima..." : "¡Empuje Trans-Marte exitoso!";
+             showMessage('2', msgText, msgType);
+              setTimeout(() => showPhase('3'), 1500);
+         });
+        document.getElementById('restart-button-success').addEventListener('click', restartGame);
+        document.getElementById('restart-button-failure').addEventListener('click', restartGame);
+
+        // Canvas interaction (dragging to rotate view) - Touch/Mouse handlers remain the same
+         canvas.addEventListener('mousedown', (e) => { isDragging = true; lastMouseX = e.clientX; canvas.style.cursor = 'grabbing'; });
+         canvas.addEventListener('mouseup', () => { if (isDragging) { isDragging = false; canvas.style.cursor = 'grab'; } });
+         canvas.addEventListener('mouseleave', () => { if (isDragging) { isDragging = false; canvas.style.cursor = 'grab'; } });
+         canvas.addEventListener('mousemove', (e) => { if (isDragging) { const dx = e.clientX - lastMouseX; viewAngle += dx * 0.01; lastMouseX = e.clientX; } });
+         canvas.addEventListener('touchstart', (e) => { if (e.touches.length === 1) { isDragging = true; lastMouseX = e.touches[0].clientX; canvas.style.cursor = 'grabbing'; } }, { passive: true });
+         canvas.addEventListener('touchend', () => { if (isDragging) { isDragging = false; canvas.style.cursor = 'grab'; } });
+         canvas.addEventListener('touchmove', (e) => { if (isDragging && e.touches.length === 1) { const dx = e.touches[0].clientX - lastMouseX; viewAngle += dx * 0.01; lastMouseX = e.touches[0].clientX; } }, { passive: true });
+
+
+        // Redraw on resize - Adjusted to use container dimensions
+        window.addEventListener('resize', () => {
+            stopSimulation();
+            // Restart simulation with current choices to adapt to new size
+            startSimulation(launchWindowChoice);
+            // Reset to current phase visually after resize/restart
+            showPhase(currentPhase);
+        });
+
+
+        // --- Game Initialization ---
+        showPhase('start'); // Show the initial start screen
+
+    </script>
+</body>
+</html>

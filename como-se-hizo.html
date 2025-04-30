@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómo se Hizo - Misión Labardén</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c1427; /* Fondo espacial oscuro */
+            color: #e5e7eb;
+            line-height: 1.7; /* Mejorar legibilidad */
+        }
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto; /* Centrar contenido */
+            padding: 3rem 1.5rem;
+        }
+        h1, h2 {
+            color: #c7d2fe; /* Indigo claro */
+            border-bottom: 2px solid #374151;
+            padding-bottom: 0.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        h1 { font-size: 2.2rem; font-weight: 700; }
+        h2 { font-size: 1.6rem; font-weight: 600; }
+        p { margin-bottom: 1rem; }
+        ul { list-style: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+        code {
+            background-color: #374151;
+            color: #f3f4f6;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        strong { color: #a5b4fc; } /* Resaltar términos clave */
+        a.back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            background-color: #4f46e5;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+        }
+        a.back-link:hover {
+            background-color: #4338ca;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>🚀 Cómo se Creó la Simulación "Misión Labardén" 🪐</h1>
+
+        <p>¡Hola, Capitán/Capitana y equipo Labardén! Aquí les contamos un poco sobre cómo construimos esta simulación interactiva para visualizar el fascinante viaje a Marte.</p>
+
+        <h2>1. El Objetivo Principal 🎯</h2>
+        <ul>
+            <li>Crear una experiencia <strong>educativa y divertida</strong> para entender los conceptos clave de un viaje interplanetario:
+                <ul>
+                    <li>Ventanas de lanzamiento.</li>
+                    <li>Órbitas de transferencia (Hohmann).</li>
+                    <li>Correcciones de trayectoria (TCM).</li>
+                    <li>Inserción orbital (MOI).</li>
+                    <li>El papel fundamental de la <strong>gravedad</strong>.</li>
+                </ul>
+            </li>
+            <li>Hacerlo <strong>interactivo</strong>, donde las decisiones del jugador afecten el resultado de la misión.</li>
+            <li>Incluir una <strong>simulación visual</strong> que complemente la explicación narrativa.</li>
+        </ul>
+
+        <h2>2. Las Tecnologías Utilizadas 💻</h2>
+        <ul>
+            <li><strong>HTML (HyperText Markup Language):</strong> Es el "esqueleto" de la página. Define la estructura básica: los títulos, los párrafos de explicación, los botones de decisión, el contenedor del juego y el <code>&lt;canvas&gt;</code> (lienzo) para la simulación.</li>
+            <li><strong>CSS (Cascading Style Sheets) con Tailwind CSS:</strong> Es el "maquillaje" y la "ropa". Se encarga de toda la apariencia visual:
+                <ul>
+                    <li>Colores espaciales (azules oscuros, grises).</li>
+                    <li>Tipografía (fuente Inter).</li>
+                    <li>Diseño responsivo (para que se vea bien en computadoras, tablets y celulares).</li>
+                    <li>Estilos de los botones (colores, bordes redondeados, efectos al pasar el mouse).</li>
+                    <li><strong>Tailwind CSS:</strong> Es una herramienta que nos permite aplicar estilos rápidamente usando clases predefinidas directamente en el HTML (ej. <code>bg-blue-500</code>, <code>text-white</code>, <code>rounded-lg</code>). ¡Muy práctico!</li>
+                </ul>
+            </li>
+            <li><strong>JavaScript:</strong> Es el "cerebro" y los "músculos". Se encarga de toda la lógica y la interactividad:
+                <ul>
+                    <li><strong>Manejo del Juego:</strong> Cambiar entre fases, mostrar/ocultar textos y botones.</li>
+                    <li><strong>Decisiones:</strong> Detectar qué botón se presiona, evaluar si la decisión es correcta o incorrecta.</li>
+                    <li><strong>Mensajes:</strong> Mostrar mensajes de éxito, advertencia o error.</li>
+                    <li><strong>Simulación Orbital (Canvas API):</strong>
+                        <ul>
+                            <li>Dibujar en el elemento <code>&lt;canvas&gt;</code>: el Sol, la Tierra, Marte, las órbitas, la nave, estrellas, efectos.</li>
+                            <li>Animar el movimiento: Hacer que los planetas giren y la nave viaje usando <code>requestAnimationFrame</code> para una animación fluida.</li>
+                            <li>Física Simplificada: Calcular posiciones usando ángulos y radios, simular la elipse de transferencia Hohmann (aproximada), y representar los diferentes estados de la nave.</li>
+                            <li>Interactividad del Canvas: Permitir rotar la vista con el mouse o el dedo.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>3. La Lógica del Juego y la Simulación 🧠⚙️</h2>
+        <ul>
+            <li><strong>Fases:</strong> El juego se divide en etapas lógicas (Inicio, Lanzamiento, Viaje, Corrección, Llegada, Éxito/Fallo).</li>
+            <li><strong>Estados:</strong> La simulación tiene diferentes <code>simulationState</code> ('idle', 'transfer', 'orbiting_mars', etc.) que determinan cómo se mueven y dibujan los objetos.</li>
+            <li><strong>Variables Clave:</strong> Guardamos las decisiones del jugador (<code>launchWindowChoice</code>, <code>trajectoryChoice</code>, <code>moiChoice</code>) para que afecten el desarrollo.</li>
+            <li><strong>Coherencia:</strong> Intentamos que la simulación visual refleje las decisiones (alineación inicial, trayectoria, resultado final).</li>
+            <li><strong>Simplificación:</strong> ¡Importante! La física real es mucho más compleja. Usamos simplificaciones para hacerlo visualmente comprensible.</li>
+        </ul>
+
+        <h2>4. El Rol de la Inteligencia Artificial (Gemini): ¡Nuestro Copiloto de Código! ✨</h2>
+        <p>¡Esta simulación se construyó con la ayuda de Gemini! Fue un proceso de <strong>"live coding" conversacional</strong>:</p>
+        <ul>
+            <li><strong>Generación Inicial:</strong> Le pedimos a Gemini que creara la estructura básica del juego.</li>
+            <li><strong>Refinamiento Iterativo:</strong> Fuimos pidiendo mejoras paso a paso ("añade un canvas", "mejora la física", "añade estrellas", "cambia los estilos").</li>
+            <li><strong>Explicación de Código:</strong> Le preguntamos a Gemini cómo funcionaban ciertas partes o cómo implementar algo nuevo.</li>
+            <li><strong>Depuración:</strong> Describimos problemas a Gemini para que sugiriera correcciones.</li>
+        </ul>
+        <p>Gemini actuó como un programador asistente muy rápido, generando y modificando código complejo (HTML, CSS, JavaScript) en tiempo real.</p>
+
+        <h2>5. Alojamiento 🌐</h2>
+        <p>Para compartir esto, subimos los archivos HTML a <strong>GitHub Pages</strong>, un servicio gratuito de GitHub. Luego, configuramos el dominio personalizado <code>julieta.podeley.ar</code> ajustando los registros <strong>DNS</strong> en el proveedor del dominio para que apunten a los servidores de GitHub.</p>
+
+        <a href="index.html" class="back-link">← Volver al Inicio</a>
+
+    </div>
+</body>
+</html>

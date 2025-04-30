@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misión Labardén - Proyecto Julieta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0c1427; /* Fondo espacial oscuro */
+            color: #e5e7eb;
+        }
+        .main-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            background-image: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px; /* Sutil patrón de puntos */
+        }
+        .card {
+            background-color: #1f2937;
+            border-radius: 1rem;
+            padding: 2.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #c7d2fe; /* Indigo claro */
+            margin-bottom: 1rem;
+        }
+        .subtitle {
+            font-size: 1.1rem;
+            color: #9ca3af;
+            margin-bottom: 2.5rem;
+        }
+        .link-button {
+            display: inline-block;
+            background-color: #4f46e5; /* Indigo */
+            color: white;
+            padding: 0.8rem 1.8rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 0.5rem;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .link-button:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+        }
+         .link-button.secondary {
+             background-color: #374151; /* Gris oscuro */
+         }
+          .link-button.secondary:hover {
+              background-color: #4b5563; /* Gris medio */
+          }
+        footer {
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="card">
+            <h1 class="title">🚀 Misión Labardén 🪐</h1>
+            <p class="subtitle">Un proyecto interactivo sobre el viaje a Marte.</p>
+            <div>
+                <a href="marte.html" class="link-button">
+                    🎮 Iniciar Simulación del Viaje
+                </a>
+                <a href="como-se-hizo.html" class="link-button secondary">
+                    ℹ️ ¿Cómo se Hizo?
+                </a>
+            </div>
+        </div>
+        <footer>
+            Proyecto para el Colegio Labardén - Creado con la ayuda de IA
+        </footer>
+    </div>
+</body>
+</html>
